@@ -6,27 +6,38 @@ import Space from "./space";
 export default function Board() {
 
     const [boardState, setBoardState] = useState([
-    ['','',''],
-    ['','',''],
-    ['','','']
-])
+        ['o', '', ''],
+        ['', '', ''],
+        ['', '', '']
+    ])
+    const toggleSpace = (row: number, column: number) => {
+        let newState = [];
+        newState.push(boardState[0]);
+        newState.push(boardState[1]);
+        newState.push(boardState[2]);
+        newState[row][column] = 'X';
+        setBoardState(newState);
+    }
+
     return <div>
         <table>
-            <tr>
-                <td><Space symbol={boardState[0][0]} row={0} column={0} /></td>
-                <td><Space symbol={boardState[0][1]} row={0} column={1} /></td>
-                <td><Space symbol={boardState[0][2]} row={0} column={2} /></td>
-            </tr>
-            <tr>
-                <td><Space symbol={boardState[1][0]} row={1} column={0} /></td>
-                <td><Space symbol={boardState[1][1]} row={1} column={1} /></td>
-                <td><Space symbol={boardState[1][2]} row={1} column={2} /></td>
-            </tr>
-            <tr>
-                <td><Space symbol={boardState[2][0]} row={2} column={0} /></td>
-                <td><Space symbol={boardState[2][1]} row={2} column={1} /></td>
-                <td><Space symbol={boardState[2][2]} row={2} column={2} /></td>
-            </tr>
+            <tbody>
+                <tr>
+                    <td><Space symbol={boardState[0][0]} toggleSpace={() => toggleSpace(0, 0)} /></td>
+                    <td><Space symbol={boardState[0][1]} toggleSpace={() => toggleSpace(0, 1)} /></td>
+                    <td><Space symbol={boardState[0][2]} toggleSpace={() => toggleSpace(0, 2)} /></td>
+                </tr>
+                <tr>
+                    <td><Space symbol={boardState[1][0]} toggleSpace={() => toggleSpace(1, 0)} /></td>
+                    <td><Space symbol={boardState[1][1]} toggleSpace={() => toggleSpace(1, 1)} /></td>
+                    <td><Space symbol={boardState[1][2]} toggleSpace={() => toggleSpace(1, 2)} /></td>
+                </tr>
+                <tr>
+                    <td><Space symbol={boardState[2][0]} toggleSpace={() => toggleSpace(2, 0)} /></td>
+                    <td><Space symbol={boardState[2][1]} toggleSpace={() => toggleSpace(2, 1)} /></td>
+                    <td><Space symbol={boardState[2][2]} toggleSpace={() => toggleSpace(2, 2)} /></td>
+                </tr>
+            </tbody>
         </table>
     </div>
 }
