@@ -1,12 +1,11 @@
 
-import Board from "./UI/board";
-
+import MainMenu from "./UI/main menu";
 
 export default function HomePage() {
 
   return (
     <div>
-      <Board />
+      <MainMenu />
     </div>
   );
 }
