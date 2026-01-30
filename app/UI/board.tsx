@@ -6,17 +6,26 @@ import Space from "./space";
 export default function Board() {
 
     const [boardState, setBoardState] = useState([
-        ['o', '', ''],
+        ['', '', ''],
         ['', '', ''],
         ['', '', '']
-    ])
+    ]);
+
+    const [activePlayer, setActivePlayer] = useState('X');
+
     const toggleSpace = (row: number, column: number) => {
-        let newState = [];
-        newState.push(boardState[0]);
-        newState.push(boardState[1]);
-        newState.push(boardState[2]);
-        newState[row][column] = 'X';
-        setBoardState(newState);
+
+        if (boardState[row][column] == '') {
+
+            let newState = [];
+            newState.push(boardState[0]);
+            newState.push(boardState[1]);
+            newState.push(boardState[2]);
+            newState[row][column] = activePlayer;
+            setBoardState(newState);
+
+            setActivePlayer(activePlayer == 'X' ? 'O' : 'X');
+        }
     }
 
     return <div>
