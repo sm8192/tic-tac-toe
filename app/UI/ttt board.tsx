@@ -49,6 +49,8 @@ export default function TicTacToeBoard(props: boardProps) {
                 setWinner(getInactivePlayer());
             }
 
+            checkForWin();
+
             if (props.players == 1 && props.humanPlayer != activePlayer && !gameOver) {
                 takeCPUTurn();
             }
@@ -57,6 +59,67 @@ export default function TicTacToeBoard(props: boardProps) {
 
     const getInactivePlayer = () => {
         return activePlayer == 'X' ? 'O' : 'X';
+    }
+
+    const checkForWin = () => {
+        let win = false;
+        for (let i = 0; i < 3; i++) {
+            win = checkRowForWin(i);
+            if (win) {
+                break;
+            }
+        }
+        if (win) {
+            return win;
+        } else {
+            for (let i = 0; i < 3; i++) {
+                win = checkColumnForWin(i);
+                if (win) {
+                    break;
+                }
+            }
+            if (win) {
+                return win;
+            } else {
+                win = checkDiagonalsForWin();
+            }
+        }
+
+        return win;
+    }
+
+    const checkRowForWin = (row: number) => {
+        if (boardState[row][0] &&
+            boardState[row][0] == boardState[row][1] &&
+            boardState[row][0] == boardState[row][2]) {
+            return true;
+        }
+        return false;
+    }
+
+    const checkColumnForWin = (column: number) => {
+        if (boardState[0][column] &&
+            boardState[0][column] == boardState[1][column] &&
+            boardState[0][column] == boardState[2][column]) {
+            return true;
+        }
+        return false;
+    }
+
+    const checkDiagonalsForWin = () => {
+        if (boardState[0][0] &&
+            boardState[0][0] == boardState[1][1] &&
+            boardState[0][0] == boardState[2][2]
+        ) {
+            return true;
+        } else if (boardState[0][2] &&
+            boardState[0][2] == boardState[1][1] &&
+            boardState[0][2] == boardState[2][0]
+        ) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     const takeCPUTurn = () => {
