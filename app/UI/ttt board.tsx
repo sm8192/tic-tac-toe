@@ -5,9 +5,20 @@ import Space from "./ttt space";
 
 interface boardProps {
     players: number;
+    humanPlayer: string;
+    setWinner: Function;
+    setIllegalMove: Function;
 }
 
 export default function TicTacToeBoard(props: boardProps) {
+
+    const setWinner = (winner: string) => {
+        props.setWinner(winner);
+    }
+
+    const setIllegalMove = (illegalMoveMade: boolean) => {
+        props.setIllegalMove(illegalMoveMade);
+    }
 
     const [boardState, setBoardState] = useState([
         ['', '', ''],
@@ -15,21 +26,55 @@ export default function TicTacToeBoard(props: boardProps) {
         ['', '', '']
     ]);
 
+    const [gameOver, setGameOver] = useState(false);
+    
     const [activePlayer, setActivePlayer] = useState('X');
 
     const toggleSpace = (row: number, column: number) => {
+        if (!gameOver) {
 
-        if (boardState[row][column] == '') {
+            if (boardState[row][column] == '') {
 
-            let newState = [];
-            newState.push(boardState[0]);
-            newState.push(boardState[1]);
-            newState.push(boardState[2]);
-            newState[row][column] = activePlayer;
-            setBoardState(newState);
+                let newState = [];
+                newState.push(boardState[0]);
+                newState.push(boardState[1]);
+                newState.push(boardState[2]);
+                newState[row][column] = activePlayer;
+                setBoardState(newState);
 
-            setActivePlayer(activePlayer == 'X' ? 'O' : 'X');
+                setActivePlayer(getInactivePlayer());
+            } else {
+                setGameOver(true);
+                setIllegalMove(true);
+                setWinner(getInactivePlayer());
+            }
+
+            if (props.players == 1 && props.humanPlayer != activePlayer && !gameOver) {
+                takeCPUTurn();
+            }
         }
+    }
+
+    function getInactivePlayer() {
+        return activePlayer == 'X'? 'O': 'X';
+    }
+
+    function takeCPUTurn() {
+        let cpuMove = generateCPUMove();
+
+        toggleSpace(cpuMove.row, cpuMove.column);
+    }
+
+    function generateCPUMove() {
+        let row = 0;
+        let column = 0;
+
+
+
+        return {
+            row: row,
+            column: column
+        };
     }
 
     return (

@@ -10,17 +10,17 @@ interface spaceProps {
     toggleSpace: Function;
 }
 
-function chooseImage(symbol: string) {
-    if (symbol == 'X') {
-        return xImage.src;
-    } else if (symbol == 'O') {
-        return oImage.src;
-    } else {
-        return blankImage.src;
-    }
-}
-
 export default function TicTacToeSpace(props: spaceProps) {
+
+    function chooseImage(symbol: string) {
+        if (symbol == 'X') {
+            return xImage.src;
+        } else if (symbol == 'O') {
+            return oImage.src;
+        } else {
+            return blankImage.src;
+        }
+    }
 
     function handleClick() {
         props.toggleSpace();
