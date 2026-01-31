@@ -10,7 +10,6 @@ export default function MainMenu() {
         setGameChoice('TicTacToe');
     }
 
-
     return (
         <div>
             {gameChoice == '' ?

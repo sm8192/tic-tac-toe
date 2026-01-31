@@ -27,7 +27,7 @@ export default function TicTacToeBoard(props: boardProps) {
     ]);
 
     const [gameOver, setGameOver] = useState(false);
-    
+
     const [activePlayer, setActivePlayer] = useState('X');
 
     const toggleSpace = (row: number, column: number) => {
@@ -56,7 +56,7 @@ export default function TicTacToeBoard(props: boardProps) {
     }
 
     function getInactivePlayer() {
-        return activePlayer == 'X'? 'O': 'X';
+        return activePlayer == 'X' ? 'O' : 'X';
     }
 
     function takeCPUTurn() {
@@ -68,8 +68,6 @@ export default function TicTacToeBoard(props: boardProps) {
     function generateCPUMove() {
         let row = 0;
         let column = 0;
-
-
 
         return {
             row: row,
