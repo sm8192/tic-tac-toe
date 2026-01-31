@@ -55,24 +55,61 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    function getInactivePlayer() {
+    const getInactivePlayer = () => {
         return activePlayer == 'X' ? 'O' : 'X';
     }
 
-    function takeCPUTurn() {
+    const takeCPUTurn = () => {
         let cpuMove = generateCPUMove();
 
         toggleSpace(cpuMove.row, cpuMove.column);
     }
 
-    function generateCPUMove() {
-        let row = 0;
-        let column = 0;
+    const generateCPUMove = () => {
+        let row = calculateRow();
+        let column = calculateColumn();
 
         return {
             row: row,
             column: column
         };
+    }
+
+    const calculateRow = () => {
+        let rowFirstBit = getRandomBit();
+
+        if (rowFirstBit) {
+            let rowSecondBit = getRandomBit();
+            if (rowSecondBit) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } else {
+            return 2;
+        }
+    }
+
+    const calculateColumn = () => {
+        let columnFirstBit = getRandomBit();
+        if (columnFirstBit) {
+            let columnSecondBit = getRandomBit();
+            if (columnSecondBit) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } else {
+            return 2;
+        }
+    }
+
+    const getRandomBit = () => {
+        if (Math.floor(Math.random() * (2))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     return (
