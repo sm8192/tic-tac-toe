@@ -24,6 +24,8 @@ export default function TicTacToeMenu() {
         setHumanPlayer('O');
     }
 
+    console.log("winner is " + winner);
+
     return (
         <div>
             <div>
@@ -38,7 +40,6 @@ export default function TicTacToeMenu() {
                     playerNumber == 0 ?
                         <button type="button" onClick={chooseTwoPlayer}>Two Player</button> :
                         null
-
                 }
             </div>
             <div>
@@ -73,7 +74,7 @@ export default function TicTacToeMenu() {
                 {
                     playerNumber == 2 || (playerNumber == 1 && humanPlayer != '') ?
                         <TicTacToeBoard players={playerNumber} humanPlayer={humanPlayer}
-                            setWinner={() => setWinner} setIllegalMove={() => setIllegalMove} /> :
+                            setWinner={(symbol:string) => setWinner(symbol)} setIllegalMove={(trueFalse: boolean) => setIllegalMove(trueFalse)} /> :
                         null
                 }
             </div>

@@ -28,11 +28,36 @@ export default function TicTacToeBoard(props: boardProps) {
 
     const [gameOver, setGameOver] = useState(false);
 
-    const [activePlayer, setActivePlayer] = useState('X');
+    const countSymbol = (symbol: string) => {
+        let symbolCount = 0;
+
+        boardState.forEach((thisRow) => {
+            thisRow.forEach((thisSpace) => {
+                if (thisSpace == symbol) {
+                    symbolCount++;
+                }
+            })
+        })
+
+        return symbolCount;
+    }
+
+    const determineActivePlayer = () => {
+        let numberOfX = countSymbol('X');
+        let numberOfO = countSymbol('O');
+
+        if (numberOfX > numberOfO) {
+            return 'O';
+        } else {
+            return 'X';
+        }
+    }
+
+    const activePlayer = determineActivePlayer();
 
     const toggleSpace = (row: number, column: number) => {
         if (!gameOver) {
-
+            let illegalMoveFound = false;
             if (boardState[row][column] == '') {
 
                 let newState = [];
@@ -42,23 +67,25 @@ export default function TicTacToeBoard(props: boardProps) {
                 newState[row][column] = activePlayer;
                 setBoardState(newState);
 
-                setActivePlayer(getInactivePlayer());
             } else {
+                illegalMoveFound = true;
                 setGameOver(true);
                 setIllegalMove(true);
-                setWinner(getInactivePlayer());
+                setWinner(getOtherPlayer(activePlayer));
             }
-
-            checkForWin();
-
-            if (props.players == 1 && props.humanPlayer != activePlayer && !gameOver) {
-                takeCPUTurn();
+            if (!illegalMoveFound && checkForWin()) {
+                setGameOver(true);
+                setWinner(activePlayer);
             }
         }
     }
 
-    const getInactivePlayer = () => {
-        return activePlayer == 'X' ? 'O' : 'X';
+    const getOtherPlayer = (player: string) => {
+        if (player == 'X') {
+            return 'O';
+        } else {
+            return 'X';
+        }
     }
 
     const checkForWin = () => {
@@ -173,6 +200,10 @@ export default function TicTacToeBoard(props: boardProps) {
         } else {
             return false;
         }
+    }
+
+    if (props.players == 0 || (props.players == 1 && activePlayer != props.humanPlayer)) {
+        takeCPUTurn();
     }
 
     return (
