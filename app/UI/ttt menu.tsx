@@ -74,7 +74,9 @@ export default function TicTacToeMenu() {
                 {
                     playerNumber == 2 || (playerNumber == 1 && humanPlayer != '') ?
                         <TicTacToeBoard players={playerNumber} humanPlayer={humanPlayer}
-                            setWinner={(symbol:string) => setWinner(symbol)} setIllegalMove={(trueFalse: boolean) => setIllegalMove(trueFalse)} /> :
+                            winner={winner}
+                            setWinner={(symbol: string) => setWinner(symbol)}
+                            setIllegalMove={(trueFalse: boolean) => setIllegalMove(trueFalse)} /> :
                         null
                 }
             </div>

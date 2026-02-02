@@ -7,7 +7,7 @@ import blankImage from '@/app/assets/White_Pixel_1x1.png';
 
 interface spaceProps {
     symbol: string;
-    toggleSpace: Function;
+    playerMove: Function;
 }
 
 export default function TicTacToeSpace(props: spaceProps) {
@@ -23,7 +23,7 @@ export default function TicTacToeSpace(props: spaceProps) {
     }
 
     function handleClick() {
-        props.toggleSpace();
+        props.playerMove();
     }
 
     return (

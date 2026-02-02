@@ -6,6 +6,7 @@ import Space from "./ttt space";
 interface boardProps {
     players: number;
     humanPlayer: string;
+    winner: string;
     setWinner: Function;
     setIllegalMove: Function;
 }
@@ -25,8 +26,6 @@ export default function TicTacToeBoard(props: boardProps) {
         ['', '', ''],
         ['', '', '']
     ]);
-
-    const [gameOver, setGameOver] = useState(false);
 
     const countSymbol = (symbol: string) => {
         let symbolCount = 0;
@@ -55,28 +54,44 @@ export default function TicTacToeBoard(props: boardProps) {
 
     const activePlayer = determineActivePlayer();
 
-    const toggleSpace = (row: number, column: number) => {
-        if (!gameOver) {
-            let illegalMoveFound = false;
-            if (boardState[row][column] == '') {
+    const playerMove = (row: number, column: number) => {
+        if (props.winner == '') {
 
-                let newState = [];
-                newState.push(boardState[0]);
-                newState.push(boardState[1]);
-                newState.push(boardState[2]);
-                newState[row][column] = activePlayer;
-                setBoardState(newState);
+            let tempBoard: string[][] = [];
+            boardState.forEach((thisRow) => {
+                tempBoard.push(thisRow)
+            })
 
-            } else {
-                illegalMoveFound = true;
-                setGameOver(true);
+            if (tempBoard[row][column] != '') {
                 setIllegalMove(true);
                 setWinner(getOtherPlayer(activePlayer));
+                return;
             }
-            if (!illegalMoveFound && checkForWin()) {
-                setGameOver(true);
+
+            tempBoard[row][column] = activePlayer;
+            if (checkForWin(tempBoard)) {
+                setBoardState(tempBoard);
                 setWinner(activePlayer);
+                return;
             }
+
+            if (props.players == 1) {
+                let cpuMove = generateCPUMove();
+
+                if (tempBoard[cpuMove.row][cpuMove.column] != '') {
+                    setIllegalMove(true);
+                    setWinner(activePlayer);
+                    return;
+                }
+
+                tempBoard[cpuMove.row][cpuMove.column] = getOtherPlayer(activePlayer);
+                if (checkForWin(tempBoard)) {
+                    setBoardState(tempBoard);
+                    setWinner(getOtherPlayer(activePlayer));
+                    return;
+                }
+            }
+            setBoardState(tempBoard);
         }
     }
 
@@ -88,10 +103,10 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const checkForWin = () => {
+    const checkForWin = (board: string[][]) => {
         let win = false;
         for (let i = 0; i < 3; i++) {
-            win = checkRowForWin(i);
+            win = checkRowForWin(board, i);
             if (win) {
                 break;
             }
@@ -100,7 +115,7 @@ export default function TicTacToeBoard(props: boardProps) {
             return win;
         } else {
             for (let i = 0; i < 3; i++) {
-                win = checkColumnForWin(i);
+                win = checkColumnForWin(board, i);
                 if (win) {
                     break;
                 }
@@ -108,40 +123,40 @@ export default function TicTacToeBoard(props: boardProps) {
             if (win) {
                 return win;
             } else {
-                win = checkDiagonalsForWin();
+                win = checkDiagonalsForWin(board);
             }
         }
 
         return win;
     }
 
-    const checkRowForWin = (row: number) => {
-        if (boardState[row][0] &&
-            boardState[row][0] == boardState[row][1] &&
-            boardState[row][0] == boardState[row][2]) {
+    const checkRowForWin = (board: string[][], row: number) => {
+        if (board[row][0] &&
+            board[row][0] == board[row][1] &&
+            board[row][0] == board[row][2]) {
             return true;
         }
         return false;
     }
 
-    const checkColumnForWin = (column: number) => {
-        if (boardState[0][column] &&
-            boardState[0][column] == boardState[1][column] &&
-            boardState[0][column] == boardState[2][column]) {
+    const checkColumnForWin = (board: string[][], column: number) => {
+        if (board[0][column] &&
+            board[0][column] == board[1][column] &&
+            board[0][column] == board[2][column]) {
             return true;
         }
         return false;
     }
 
-    const checkDiagonalsForWin = () => {
-        if (boardState[0][0] &&
-            boardState[0][0] == boardState[1][1] &&
-            boardState[0][0] == boardState[2][2]
+    const checkDiagonalsForWin = (board: string[][]) => {
+        if (board[0][0] &&
+            board[0][0] == board[1][1] &&
+            board[0][0] == board[2][2]
         ) {
             return true;
-        } else if (boardState[0][2] &&
-            boardState[0][2] == boardState[1][1] &&
-            boardState[0][2] == boardState[2][0]
+        } else if (board[0][2] &&
+            board[0][2] == board[1][1] &&
+            board[0][2] == board[2][0]
         ) {
             return true;
         } else {
@@ -152,7 +167,7 @@ export default function TicTacToeBoard(props: boardProps) {
     const takeCPUTurn = () => {
         let cpuMove = generateCPUMove();
 
-        toggleSpace(cpuMove.row, cpuMove.column);
+        //toggleSpace(cpuMove.row, cpuMove.column);
     }
 
     const generateCPUMove = () => {
@@ -202,28 +217,24 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    if (props.players == 0 || (props.players == 1 && activePlayer != props.humanPlayer)) {
-        takeCPUTurn();
-    }
-
     return (
         <div>
             <table>
                 <tbody>
                     <tr>
-                        <td><Space symbol={boardState[0][0]} toggleSpace={() => toggleSpace(0, 0)} /></td>
-                        <td><Space symbol={boardState[0][1]} toggleSpace={() => toggleSpace(0, 1)} /></td>
-                        <td><Space symbol={boardState[0][2]} toggleSpace={() => toggleSpace(0, 2)} /></td>
+                        <td><Space symbol={boardState[0][0]} playerMove={() => playerMove(0, 0)} /></td>
+                        <td><Space symbol={boardState[0][1]} playerMove={() => playerMove(0, 1)} /></td>
+                        <td><Space symbol={boardState[0][2]} playerMove={() => playerMove(0, 2)} /></td>
                     </tr>
                     <tr>
-                        <td><Space symbol={boardState[1][0]} toggleSpace={() => toggleSpace(1, 0)} /></td>
-                        <td><Space symbol={boardState[1][1]} toggleSpace={() => toggleSpace(1, 1)} /></td>
-                        <td><Space symbol={boardState[1][2]} toggleSpace={() => toggleSpace(1, 2)} /></td>
+                        <td><Space symbol={boardState[1][0]} playerMove={() => playerMove(1, 0)} /></td>
+                        <td><Space symbol={boardState[1][1]} playerMove={() => playerMove(1, 1)} /></td>
+                        <td><Space symbol={boardState[1][2]} playerMove={() => playerMove(1, 2)} /></td>
                     </tr>
                     <tr>
-                        <td><Space symbol={boardState[2][0]} toggleSpace={() => toggleSpace(2, 0)} /></td>
-                        <td><Space symbol={boardState[2][1]} toggleSpace={() => toggleSpace(2, 1)} /></td>
-                        <td><Space symbol={boardState[2][2]} toggleSpace={() => toggleSpace(2, 2)} /></td>
+                        <td><Space symbol={boardState[2][0]} playerMove={() => playerMove(2, 0)} /></td>
+                        <td><Space symbol={boardState[2][1]} playerMove={() => playerMove(2, 1)} /></td>
+                        <td><Space symbol={boardState[2][2]} playerMove={() => playerMove(2, 2)} /></td>
                     </tr>
                 </tbody>
             </table>
