@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Space from "./ttt space";
 
 interface boardProps {
@@ -52,8 +52,6 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const activePlayer = determineActivePlayer();
-
     const playerMove = (row: number, column: number) => {
         if (props.winner == '') {
 
@@ -76,7 +74,7 @@ export default function TicTacToeBoard(props: boardProps) {
             }
 
             if (props.players == 1) {
-                let cpuMove = generateCPUMove();
+                let cpuMove = generateCPUMove(tempBoard);
 
                 if (tempBoard[cpuMove.row][cpuMove.column] != '') {
                     setIllegalMove(true);
@@ -164,15 +162,119 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const takeCPUTurn = () => {
-        let cpuMove = generateCPUMove();
+    class Neuron {
+        weights: number[];
+        bias: number;
 
-        //toggleSpace(cpuMove.row, cpuMove.column);
+        constructor(weights: number[], bias: number) {
+            this.weights = weights;
+            this.bias = bias;
+        }
+
+        activateNeuron(input: boolean[]) {
+            const weightedSum = this.weights.reduce((sum, weight, i) => {
+                let inputNumber = input[i] ? 1 : 0;
+                return ((sum * weight) + inputNumber);
+            }, 0);
+            return weightedSum + this.bias > 0 ? true : false;
+        }
     }
 
-    const generateCPUMove = () => {
-        let row = calculateRow();
-        let column = calculateColumn();
+    class Layer {
+        neurons: Neuron[];
+        length: number;
+
+        constructor(numberOfInputs: number, numberOfNeurons: number) {
+            this.neurons = [];
+            for (let i = 0; i < numberOfInputs; i++) {
+                let thisNeuron = new Neuron(generateRandomWeights(numberOfInputs), randomValue())
+                this.neurons.push(thisNeuron);
+            }
+            this.length = numberOfNeurons;
+        }
+
+        activateLayer(inputArray: boolean[]) {
+            let outputArray: boolean[] = [];
+
+            for (let i = 0; i < this.length; i++) {
+                outputArray.push(this.neurons[i].activateNeuron(inputArray));
+            }
+            return outputArray;
+        }
+    }
+
+    class Network {
+        inputLayer: Layer;
+        layers: Layer[];
+        outputLayer: Layer;
+
+        constructor(numberOfInputs: number, numberOfOutputs: number,
+            numberOfHiddenLayers: number, hiddenLayerLength: number) {
+            this.layers = [];
+
+            this.inputLayer = new Layer(numberOfInputs, numberOfInputs);
+
+            for (let i = 0; i < numberOfHiddenLayers; i++) {
+                if (i == 0) {
+                    this.layers.push(new Layer(this.inputLayer.length, hiddenLayerLength))
+                } else {
+                    this.layers.push(new Layer(hiddenLayerLength, hiddenLayerLength));
+                }
+            }
+            this.outputLayer = new Layer(hiddenLayerLength, numberOfOutputs);
+        }
+
+        activateNetwork(inputArray: boolean[]) {
+            let firstLayerOutputs = this.inputLayer.activateLayer(inputArray);
+
+            let hiddenLayerOutputs = this.layers.reduce((previousOutputs, thisLayer) => {
+                return thisLayer.activateLayer(previousOutputs)
+            }, firstLayerOutputs);
+
+            return this.outputLayer.activateLayer(hiddenLayerOutputs);
+        }
+    }
+
+    const generateRandomWeights = (numberOfWeights: number) => {
+        let weightsArray = [];
+
+        for (let i = 0; i < numberOfWeights; i++) {
+            weightsArray.push(randomValue())
+        }
+
+        return weightsArray;
+    }
+
+    const randomValue = () => {
+        return ((Math.random() * 2) - 1);
+    }
+
+    const convertBoardstateToInputs = (board: string[][]) => {
+        let networkInputs: boolean[] = [];
+
+        board.forEach((thisRow) => {
+            thisRow.forEach((thisSpace) => {
+                if (thisSpace != '') {
+                    networkInputs.push(true);
+                    if (thisSpace == 'X') {
+                        networkInputs.push(true);
+                    } else {
+                        networkInputs.push(false);
+                    }
+                } else {
+                    networkInputs.push(false);
+                    networkInputs.push(false);
+                }
+            });
+        });
+        return networkInputs;
+    }
+
+    const generateCPUMove = (board: string[][]) => {
+        let inputs = convertBoardstateToInputs(board);
+        let networkOutputs = neuralNetwork.current.activateNetwork(inputs);
+        let row = calculateRow(networkOutputs[0], networkOutputs[1]);
+        let column = calculateColumn(networkOutputs[2], networkOutputs[3]);
 
         return {
             row: row,
@@ -180,11 +282,9 @@ export default function TicTacToeBoard(props: boardProps) {
         };
     }
 
-    const calculateRow = () => {
-        let rowFirstBit = getRandomBit();
+    const calculateRow = (rowFirstBit: boolean, rowSecondBit: boolean) => {
 
         if (rowFirstBit) {
-            let rowSecondBit = getRandomBit();
             if (rowSecondBit) {
                 return 0;
             } else {
@@ -195,10 +295,8 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const calculateColumn = () => {
-        let columnFirstBit = getRandomBit();
+    const calculateColumn = (columnFirstBit: boolean, columnSecondBit: boolean) => {
         if (columnFirstBit) {
-            let columnSecondBit = getRandomBit();
             if (columnSecondBit) {
                 return 0;
             } else {
@@ -209,12 +307,19 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const getRandomBit = () => {
-        if (Math.floor(Math.random() * (2))) {
-            return true;
-        } else {
-            return false;
-        }
+    const neuralNetwork = useRef(new Network(18, 4, 10, 10));
+
+    const activePlayer = determineActivePlayer();
+
+    if (props.players == 1 && props.humanPlayer == 'O' && countSymbol('X') == 0) {
+
+        let tempBoard: string[][] = [];
+        boardState.forEach((thisRow) => {
+            tempBoard.push(thisRow)
+        })
+
+        let cpuMove = generateCPUMove(tempBoard);
+        tempBoard[cpuMove.row][cpuMove.column] = activePlayer;
     }
 
     return (

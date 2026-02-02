@@ -24,8 +24,6 @@ export default function TicTacToeMenu() {
         setHumanPlayer('O');
     }
 
-    console.log("winner is " + winner);
-
     return (
         <div>
             <div>
