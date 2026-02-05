@@ -14,6 +14,79 @@ interface boardProps {
 
 export default function TicTacToeBoard(props: boardProps) {
 
+        class Neuron {
+        weights: number[];
+        bias: number;
+
+        constructor(weights: number[], bias: number) {
+            this.weights = weights;
+            this.bias = bias;
+        }
+
+        activateNeuron(input: boolean[]) {
+            const weightedSum = this.weights.reduce((sum, weight, i) => {
+                let inputNumber = input[i] ? 1 : 0;
+                return ((inputNumber * weight) + sum);
+            }, 0);
+            return weightedSum + this.bias > 0 ? true : false;
+        }
+    }
+
+    class Layer {
+        neurons: Neuron[];
+        length: number;
+
+        constructor(numberOfInputs: number, numberOfNeurons: number) {
+            this.neurons = [];
+            for (let i = 0; i < numberOfInputs; i++) {
+                let thisNeuron = new Neuron(generateRandomWeights(numberOfInputs), randomValue())
+                this.neurons.push(thisNeuron);
+            }
+            this.length = numberOfNeurons;
+        }
+
+        activateLayer(inputArray: boolean[]) {
+            let outputArray: boolean[] = [];
+
+            for (let i = 0; i < this.length; i++) {
+                outputArray.push(this.neurons[i].activateNeuron(inputArray));
+            }
+            return outputArray;
+        }
+    }
+
+    class Network {
+        inputLayer: Layer;
+        layers: Layer[];
+        outputLayer: Layer;
+
+        constructor(numberOfInputs: number, numberOfOutputs: number,
+            numberOfHiddenLayers: number, hiddenLayerLength: number) {
+            this.layers = [];
+
+            this.inputLayer = new Layer(numberOfInputs, numberOfInputs);
+
+            for (let i = 0; i < numberOfHiddenLayers; i++) {
+                if (i == 0) {
+                    this.layers.push(new Layer(this.inputLayer.length, hiddenLayerLength))
+                } else {
+                    this.layers.push(new Layer(hiddenLayerLength, hiddenLayerLength));
+                }
+            }
+            this.outputLayer = new Layer(hiddenLayerLength, numberOfOutputs);
+        }
+
+        activateNetwork(inputArray: boolean[]) {
+            let firstLayerOutputs = this.inputLayer.activateLayer(inputArray);
+
+            let hiddenLayerOutputs = this.layers.reduce((previousOutputs, thisLayer) => {
+                return thisLayer.activateLayer(previousOutputs)
+            }, firstLayerOutputs);
+
+            return this.outputLayer.activateLayer(hiddenLayerOutputs);
+        }
+    }
+
     const setWinner = (winner: string) => {
         props.setWinner(winner);
     }
@@ -163,79 +236,6 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    class Neuron {
-        weights: number[];
-        bias: number;
-
-        constructor(weights: number[], bias: number) {
-            this.weights = weights;
-            this.bias = bias;
-        }
-
-        activateNeuron(input: boolean[]) {
-            const weightedSum = this.weights.reduce((sum, weight, i) => {
-                let inputNumber = input[i] ? 1 : 0;
-                return ((inputNumber * weight) + sum);
-            }, 0);
-            return weightedSum + this.bias > 0 ? true : false;
-        }
-    }
-
-    class Layer {
-        neurons: Neuron[];
-        length: number;
-
-        constructor(numberOfInputs: number, numberOfNeurons: number) {
-            this.neurons = [];
-            for (let i = 0; i < numberOfInputs; i++) {
-                let thisNeuron = new Neuron(generateRandomWeights(numberOfInputs), randomValue())
-                this.neurons.push(thisNeuron);
-            }
-            this.length = numberOfNeurons;
-        }
-
-        activateLayer(inputArray: boolean[]) {
-            let outputArray: boolean[] = [];
-
-            for (let i = 0; i < this.length; i++) {
-                outputArray.push(this.neurons[i].activateNeuron(inputArray));
-            }
-            return outputArray;
-        }
-    }
-
-    class Network {
-        inputLayer: Layer;
-        layers: Layer[];
-        outputLayer: Layer;
-
-        constructor(numberOfInputs: number, numberOfOutputs: number,
-            numberOfHiddenLayers: number, hiddenLayerLength: number) {
-            this.layers = [];
-
-            this.inputLayer = new Layer(numberOfInputs, numberOfInputs);
-
-            for (let i = 0; i < numberOfHiddenLayers; i++) {
-                if (i == 0) {
-                    this.layers.push(new Layer(this.inputLayer.length, hiddenLayerLength))
-                } else {
-                    this.layers.push(new Layer(hiddenLayerLength, hiddenLayerLength));
-                }
-            }
-            this.outputLayer = new Layer(hiddenLayerLength, numberOfOutputs);
-        }
-
-        activateNetwork(inputArray: boolean[]) {
-            let firstLayerOutputs = this.inputLayer.activateLayer(inputArray);
-
-            let hiddenLayerOutputs = this.layers.reduce((previousOutputs, thisLayer) => {
-                return thisLayer.activateLayer(previousOutputs)
-            }, firstLayerOutputs);
-
-            return this.outputLayer.activateLayer(hiddenLayerOutputs);
-        }
-    }
-
     const generateRandomWeights = (numberOfWeights: number) => {
         let weightsArray = [];
 
@@ -322,8 +322,6 @@ export default function TicTacToeBoard(props: boardProps) {
         let cpuMove = generateCPUMove(tempBoard);
         tempBoard[cpuMove.row][cpuMove.column] = activePlayer;
     }
-
-    const newNeuralNetwork = new Network(18,4,10,10);
 
     return (
         <div>
