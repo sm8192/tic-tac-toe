@@ -14,8 +14,11 @@ interface networkScore {
 export default function ResultsTable(props: tableProps) {
 
     const quickSortByScore = (scoresArray: networkScore[]) => {
-        let pivot = scoresArray[0];
         let length = scoresArray.length;
+        if(length <= 1) {
+            return scoresArray;
+        }
+         let pivot = scoresArray[0];
         let leftArray = [];
         let rightArray = [];
 
@@ -50,7 +53,7 @@ export default function ResultsTable(props: tableProps) {
                         return (
                             <ResultRow
                                 networkNumber={thisNetworkScore.networkNumber}
-                                score={thisNetworkScore.score} />
+                                score={thisNetworkScore.score} key={thisNetworkScore.networkNumber}/>
                         );
                     })}
                 </tbody>
