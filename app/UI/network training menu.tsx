@@ -327,14 +327,14 @@ export default function TrainingMenu() {
         let sortedArray = quickSortByScore(scoresArray);
 
         let newNetworkJSONArray = [];
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
 
             let chosenNetworkJSON = networkValues[sortedArray[i].networkNumber];
 
             newNetworkJSONArray.push(chosenNetworkJSON);
         }
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
             let chosenNetworkJSON = networkValues[sortedArray[i].networkNumber];
 
             let mutatedNetworkJSON = smallMutate(chosenNetworkJSON);
@@ -342,7 +342,7 @@ export default function TrainingMenu() {
             newNetworkJSONArray.push(mutatedNetworkJSON);
         }
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 10; i++) {
             let chosenNetworkJSON = networkValues[sortedArray[i].networkNumber];
 
             let firstMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
@@ -351,7 +351,7 @@ export default function TrainingMenu() {
             newNetworkJSONArray.push(firstMutatedNetworkJSON);
             newNetworkJSONArray.push(secondMutatedNetworkJSON);
         }
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 10; i++) {
             newNetworkJSONArray.push(generateNewNetworkJSON(18, 4, 10, 10));
         }
         setNewNetworkArray(newNetworkJSONArray);
