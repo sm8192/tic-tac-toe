@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Space from "./ttt space";
+import networkValues from "@/app/network/NetworkValues.json";
 
 interface boardProps {
     players: number;
@@ -174,7 +175,7 @@ export default function TicTacToeBoard(props: boardProps) {
         activateNeuron(input: boolean[]) {
             const weightedSum = this.weights.reduce((sum, weight, i) => {
                 let inputNumber = input[i] ? 1 : 0;
-                return ((sum * weight) + inputNumber);
+                return ((inputNumber * weight) + sum);
             }, 0);
             return weightedSum + this.bias > 0 ? true : false;
         }
@@ -321,6 +322,8 @@ export default function TicTacToeBoard(props: boardProps) {
         let cpuMove = generateCPUMove(tempBoard);
         tempBoard[cpuMove.row][cpuMove.column] = activePlayer;
     }
+
+    const newNeuralNetwork = new Network(18,4,10,10);
 
     return (
         <div>
