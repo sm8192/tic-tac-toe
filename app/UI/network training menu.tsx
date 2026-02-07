@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from "react";
-import ResultsTable from "./network training table";
 import networkValues from "@/app/network/NetworkValues.json";
 
 export default function TrainingMenu() {
@@ -36,13 +35,9 @@ export default function TrainingMenu() {
         networkNumber: number,
         score: number
     }
-    const emptyScoresArray: networkScore[] = [];
     const emptyNetworkArray: networkJSON[] = [];
 
-    const [trainingFinished, setTrainingFinished] = useState(false);
-    const [scoresArray, setScoresArray] = useState(emptyScoresArray);
     const [trainingInProcess, setTrainingInProcess] = useState(false);
-    const [generatingInProcess, setGeneratingInProcess] = useState(false);
     const [newNetworksGenerated, setNewNetworksGenerated] = useState(false);
     const [newNetworkArray, setNewNetworkArray] = useState(emptyNetworkArray);
 
@@ -118,13 +113,28 @@ export default function TrainingMenu() {
         }
     }
 
-    const beginTraining = () => {
+    const multiGenerationTraining = (numberOfGenerations: number) => {
         if(trainingInProcess) {
             return;
         }
         setTrainingInProcess(true);
+
+        let scoresArray = runTournament(networkValues);
+        let sortedScores = quickSortByScore(scoresArray);
+        let newNetworkValues = createNewGeneration(networkValues, sortedScores);
+        for (let i = 1; i < numberOfGenerations; i++) {
+            let scoresArray = runTournament(networkValues);
+            let sortedScores = quickSortByScore(scoresArray);
+            newNetworkValues = createNewGeneration(newNetworkValues, sortedScores);
+        }
+        setNewNetworkArray(newNetworkValues);
+        setNewNetworksGenerated(true);
+        setTrainingInProcess(false);
+    }
+
+    let runTournament = (networkValues: networkJSON[]) => {
         let length = networkValues.length;
-        let scoreArray = [];
+        let scoresArray = [];
 
         for (let i = 0; i < length; i++) {
             let thisScoreObject = {
@@ -132,39 +142,71 @@ export default function TrainingMenu() {
                 score: 0
             }
 
-            scoreArray.push(thisScoreObject);
+            scoresArray.push(thisScoreObject);
         }
 
         for (let i = 0; i < length - 1; i++) {
             for (let j = i + 1; j < length; j++) {
-
                 let networkOne = new Network(networkValues[i]);
                 let networkTwo = new Network(networkValues[j]);
+
                 let gameOneWinner = simulateGame(networkOne, networkTwo);
                 let gameTwoWinner = simulateGame(networkTwo, networkOne);
 
                 if (gameOneWinner == 'X') {
-                    scoreArray[i].score += 2;
+                    scoresArray[i].score += 2;
                 } else if (gameOneWinner == 'O') {
-                    scoreArray[j].score += 2;
+                    scoresArray[j].score += 2;
                 } else {
-                    scoreArray[i].score += 1;
-                    scoreArray[j].score += 1;
+                    scoresArray[i].score += 1;
+                    scoresArray[j].score += 1;
                 }
 
                 if (gameTwoWinner == 'X') {
-                    scoreArray[j].score += 2;
+                    scoresArray[j].score += 2;
                 } else if (gameTwoWinner == 'O') {
-                    scoreArray[i].score += 2;
+                    scoresArray[i].score += 2;
                 } else {
-                    scoreArray[i].score += 1;
-                    scoreArray[j].score += 1;
+                    scoresArray[i].score += 1;
+                    scoresArray[j].score += 1;
                 }
             }
         }
-        setScoresArray(scoreArray);
-        setTrainingInProcess(false);
-        setTrainingFinished(true);
+        return scoresArray;
+    }
+
+    const createNewGeneration = (networkValues: networkJSON[], scoresArray: networkScore[]) => {
+
+        let newNetworkJSONArray = [];
+        {
+            for (let i = 0; i < 5; i++) {
+                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
+
+                newNetworkJSONArray.push(chosenNetworkJSON);
+            }
+
+            for (let i = 0; i < 5; i++) {
+                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
+
+                let mutatedNetworkJSON = smallMutate(chosenNetworkJSON);
+
+                newNetworkJSONArray.push(mutatedNetworkJSON);
+            }
+
+            for (let i = 0; i < 5; i++) {
+                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
+
+                let firstMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
+                let secondMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
+
+                newNetworkJSONArray.push(firstMutatedNetworkJSON);
+                newNetworkJSONArray.push(secondMutatedNetworkJSON);
+            }
+            for (let i = 0; i < 10; i++) {
+                newNetworkJSONArray.push(generateNewNetworkJSON(18, 4, 10, 10));
+            }
+        }
+        return newNetworkJSONArray;
     }
 
     const convertBoardstateToInputs = (board: string[][]) => {
@@ -319,46 +361,6 @@ export default function TrainingMenu() {
         }
     }
 
-    const generateNewNetworkValues = () => {
-        if(generatingInProcess) {
-            return;
-        }
-        setGeneratingInProcess(true);
-        let sortedArray = quickSortByScore(scoresArray);
-
-        let newNetworkJSONArray = [];
-        for (let i = 0; i < 10; i++) {
-
-            let chosenNetworkJSON = networkValues[sortedArray[i].networkNumber];
-
-            newNetworkJSONArray.push(chosenNetworkJSON);
-        }
-
-        for (let i = 0; i < 10; i++) {
-            let chosenNetworkJSON = networkValues[sortedArray[i].networkNumber];
-
-            let mutatedNetworkJSON = smallMutate(chosenNetworkJSON);
-
-            newNetworkJSONArray.push(mutatedNetworkJSON);
-        }
-
-        for (let i = 0; i < 10; i++) {
-            let chosenNetworkJSON = networkValues[sortedArray[i].networkNumber];
-
-            let firstMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
-            let secondMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
-
-            newNetworkJSONArray.push(firstMutatedNetworkJSON);
-            newNetworkJSONArray.push(secondMutatedNetworkJSON);
-        }
-        for (let i = 0; i < 10; i++) {
-            newNetworkJSONArray.push(generateNewNetworkJSON(18, 4, 10, 10));
-        }
-        setNewNetworkArray(newNetworkJSONArray);
-        setNewNetworksGenerated(true);
-        setGeneratingInProcess(false);
-    }
-
     const smallMutate = (networkJSON: networkJSON) => {
         let newNetworkJSON = structuredClone(networkJSON)
         newNetworkJSON.inputLayer.neurons.forEach((thisNeuron) => {
@@ -369,11 +371,11 @@ export default function TrainingMenu() {
             thisLayer.neurons.forEach((thisNeuron) => {
                 smallMutateNeuron(thisNeuron);
             })
-        })
+        });
 
         newNetworkJSON.outputLayer.neurons.forEach((thisNeuron) => {
             smallMutateNeuron(thisNeuron);
-        })
+        });
 
         return newNetworkJSON;
     }
@@ -515,24 +517,14 @@ export default function TrainingMenu() {
     return (
         <div>
             {
-                !trainingFinished ?
-                    <button type="button" onClick={beginTraining} disabled={trainingInProcess}>Begin Training</button> :
-                    null
-            }
-            {
-                trainingFinished ?
-                    <ResultsTable scoresArray={scoresArray} /> :
-                    null
-            }
-            {
-                (trainingFinished && !newNetworksGenerated)?
-                    <button type="button" onClick={generateNewNetworkValues} disabled={generatingInProcess} >Generate New Values?</button> :
+                !newNetworksGenerated ?
+                    <button type="button" onClick={() => multiGenerationTraining(1)} disabled={trainingInProcess}>Begin Training</button> :
                     null
             }
             {
                 newNetworksGenerated ?
-                <button type="button" onClick={copyNetworksToClipboard}>Copy new networks to Clipboard</button>:
-                null
+                    <button type="button" onClick={copyNetworksToClipboard}>Copy new networks to Clipboard</button> :
+                    null
             }
 
         </div>
