@@ -260,20 +260,6 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const generateRandomWeights = (numberOfWeights: number) => {
-        let weightsArray = [];
-
-        for (let i = 0; i < numberOfWeights; i++) {
-            weightsArray.push(randomValue())
-        }
-
-        return weightsArray;
-    }
-
-    const randomValue = () => {
-        return ((Math.random() * 2) - 1);
-    }
-
     const convertBoardstateToInputs = (board: string[][]) => {
         let networkInputs: boolean[] = [];
 
