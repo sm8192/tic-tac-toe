@@ -13,14 +13,39 @@ interface boardProps {
 }
 
 export default function TicTacToeBoard(props: boardProps) {
+    interface networkJSON {
+        inputLayer: {
+            neurons: neuronJSON[]
+            ,
+            length: number
+        },
+        layers: layerJSON[]
+        ,
+        outputLayer: {
+            neurons: neuronJSON[]
+            ,
+            length: number
+        }
+    }
 
-        class Neuron {
+    interface layerJSON {
+        neurons: neuronJSON[]
+        ,
+        length: number
+    }
+
+    interface neuronJSON {
+        weights: number[],
+        bias: number
+    }
+
+    class Neuron {
         weights: number[];
         bias: number;
 
-        constructor(weights: number[], bias: number) {
-            this.weights = weights;
-            this.bias = bias;
+        constructor(neuronJSON: neuronJSON) {
+            this.weights = neuronJSON.weights;
+            this.bias = neuronJSON.bias;
         }
 
         activateNeuron(input: boolean[]) {
@@ -36,13 +61,13 @@ export default function TicTacToeBoard(props: boardProps) {
         neurons: Neuron[];
         length: number;
 
-        constructor(numberOfInputs: number, numberOfNeurons: number) {
+        constructor(layerJSON: layerJSON) {
             this.neurons = [];
-            for (let i = 0; i < numberOfInputs; i++) {
-                let thisNeuron = new Neuron(generateRandomWeights(numberOfInputs), randomValue())
+            for (let i = 0; i < layerJSON.length; i++) {
+                let thisNeuron = new Neuron(layerJSON.neurons[i]);
                 this.neurons.push(thisNeuron);
             }
-            this.length = numberOfNeurons;
+            this.length = layerJSON.length;
         }
 
         activateLayer(inputArray: boolean[]) {
@@ -60,20 +85,19 @@ export default function TicTacToeBoard(props: boardProps) {
         layers: Layer[];
         outputLayer: Layer;
 
-        constructor(numberOfInputs: number, numberOfOutputs: number,
-            numberOfHiddenLayers: number, hiddenLayerLength: number) {
+        constructor(networkJSON: networkJSON) {
             this.layers = [];
 
-            this.inputLayer = new Layer(numberOfInputs, numberOfInputs);
+            this.inputLayer = new Layer(networkJSON.inputLayer);
 
-            for (let i = 0; i < numberOfHiddenLayers; i++) {
+            for (let i = 0; i < networkJSON.layers.length; i++) {
                 if (i == 0) {
-                    this.layers.push(new Layer(this.inputLayer.length, hiddenLayerLength))
+                    this.layers.push(new Layer(networkJSON.layers[i]))
                 } else {
-                    this.layers.push(new Layer(hiddenLayerLength, hiddenLayerLength));
+                    this.layers.push(new Layer(networkJSON.layers[i]));
                 }
             }
-            this.outputLayer = new Layer(hiddenLayerLength, numberOfOutputs);
+            this.outputLayer = new Layer(networkJSON.outputLayer);
         }
 
         activateNetwork(inputArray: boolean[]) {
@@ -308,7 +332,7 @@ export default function TicTacToeBoard(props: boardProps) {
         }
     }
 
-    const neuralNetwork = useRef(new Network(18, 4, 10, 10));
+    const neuralNetwork = useRef(new Network(networkValues[0]));
 
     const activePlayer = determineActivePlayer();
 
