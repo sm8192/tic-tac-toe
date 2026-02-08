@@ -114,7 +114,7 @@ export default function TrainingMenu() {
     }
 
     const multiGenerationTraining = (numberOfGenerations: number) => {
-        if(trainingInProcess) {
+        if (trainingInProcess) {
             return;
         }
         setTrainingInProcess(true);
