@@ -16,22 +16,15 @@ export default function TicTacToeBoard(props: boardProps) {
     interface networkJSON {
         inputLayer: {
             neurons: neuronJSON[]
-            ,
-            length: number
         },
-        layers: layerJSON[]
-        ,
+        layers: layerJSON[],
         outputLayer: {
-            neurons: neuronJSON[]
-            ,
-            length: number
+            neurons: neuronJSON[],
         }
     }
 
     interface layerJSON {
-        neurons: neuronJSON[]
-        ,
-        length: number
+        neurons: neuronJSON[],
     }
 
     interface neuronJSON {
@@ -59,21 +52,19 @@ export default function TicTacToeBoard(props: boardProps) {
 
     class Layer {
         neurons: Neuron[];
-        length: number;
 
         constructor(layerJSON: layerJSON) {
             this.neurons = [];
-            for (let i = 0; i < layerJSON.length; i++) {
+            for (let i = 0; i < layerJSON.neurons.length; i++) {
                 let thisNeuron = new Neuron(layerJSON.neurons[i]);
                 this.neurons.push(thisNeuron);
             }
-            this.length = layerJSON.length;
         }
 
         activateLayer(inputArray: boolean[]) {
             let outputArray: boolean[] = [];
 
-            for (let i = 0; i < this.length; i++) {
+            for (let i = 0; i < this.neurons.length; i++) {
                 outputArray.push(this.neurons[i].activateNeuron(inputArray));
             }
             return outputArray;

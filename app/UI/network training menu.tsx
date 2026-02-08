@@ -8,22 +8,15 @@ export default function TrainingMenu() {
     interface networkJSON {
         inputLayer: {
             neurons: neuronJSON[]
-            ,
-            length: number
         },
-        layers: layerJSON[]
-        ,
+        layers: layerJSON[],
         outputLayer: {
             neurons: neuronJSON[]
-            ,
-            length: number
         }
     }
 
     interface layerJSON {
         neurons: neuronJSON[]
-        ,
-        length: number
     }
 
     interface neuronJSON {
@@ -61,21 +54,19 @@ export default function TrainingMenu() {
 
     class Layer {
         neurons: Neuron[];
-        length: number;
 
         constructor(layerJSON: layerJSON) {
             this.neurons = [];
-            for (let i = 0; i < layerJSON.length; i++) {
+            for (let i = 0; i < layerJSON.neurons.length; i++) {
                 let thisNeuron = new Neuron(layerJSON.neurons[i]);
                 this.neurons.push(thisNeuron);
             }
-            this.length = layerJSON.length;
         }
 
         activateLayer(inputArray: boolean[]) {
             let outputArray: boolean[] = [];
 
-            for (let i = 0; i < this.length; i++) {
+            for (let i = 0; i < this.neurons.length; i++) {
                 outputArray.push(this.neurons[i].activateNeuron(inputArray));
             }
             return outputArray;
@@ -424,13 +415,11 @@ export default function TrainingMenu() {
         let newNetworkJSON = {
             inputLayer: {
                 neurons: emptyInputNeurons,
-                length: layerLength
             },
             layers: emptyLayers
             ,
             outputLayer: {
                 neurons: emptyOutputNeurons,
-                length: outputs
             }
         }
         for (let i = 0; i < layerLength; i++) {
@@ -464,8 +453,7 @@ export default function TrainingMenu() {
     const generateNewLayerJSON = (numberOfInputs: number, layerLength: number) => {
         let emptyNeurons: neuronJSON[] = [];
         let newLayerJSON = {
-            neurons: emptyNeurons,
-            length: layerLength
+            neurons: emptyNeurons
         }
 
         for (let i = 0; i < layerLength; i++) {
