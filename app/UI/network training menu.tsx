@@ -123,7 +123,7 @@ export default function TrainingMenu() {
         let sortedScores = quickSortByScore(scoresArray);
         let newNetworkValues = createNewGeneration(networkValues, sortedScores);
         for (let i = 1; i < numberOfGenerations; i++) {
-            let scoresArray = runTournament(networkValues);
+            let scoresArray = runTournament(newNetworkValues);
             let sortedScores = quickSortByScore(scoresArray);
             newNetworkValues = createNewGeneration(newNetworkValues, sortedScores);
         }
