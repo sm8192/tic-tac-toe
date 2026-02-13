@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import networkValues from "@/app/network/BasicNetworkValues.json";
+import { create } from "domain";
 
 interface networkScore {
     networkNumber: number,
@@ -35,6 +36,7 @@ export default function BasicTrainingMenu() {
     const [trainingInProcess, setTrainingInProcess] = useState(false);
 
     let newNetworkArray = useRef(emptyNetworkArray)
+    let highScore = useRef(0);
 
     class Neuron {
         weights: number[];
@@ -112,17 +114,29 @@ export default function BasicTrainingMenu() {
         }
         setTrainingInProcess(true);
 
-        let scoresArray = runTournament(networkValues);
-        let sortedScores = quickSortByScore(scoresArray);
-        let newNetworkValues = createNewGeneration(networkValues, sortedScores);
+        let newGeneration = createNewGeneration(networkValues);
+        let scoresArray = runTournament(newGeneration);
+        let top30 = selectTop30(newGeneration, scoresArray);
         for (let i = 1; i < numberOfGenerations; i++) {
-            let scoresArray = runTournament(newNetworkValues);
-            let sortedScores = quickSortByScore(scoresArray);
-            newNetworkValues = createNewGeneration(newNetworkValues, sortedScores);
+            let newGeneration = createNewGeneration(top30);
+            let scoresArray = runTournament(newGeneration);
+            top30 = selectTop30(newGeneration, scoresArray);
         }
-        newNetworkArray.current = newNetworkValues;
+
+        newNetworkArray.current = top30;
         setNewNetworksGenerated(true);
         setTrainingInProcess(false);
+    }
+
+    const selectTop30 = (networkJsonArray: networkJSON[], scoresArray: networkScore[]) => {
+        let sortedScoresArray = quickSortByScore(scoresArray);
+        let newNetworkJsonArray: networkJSON[] = [];
+
+        for (let i = 0; i < 30; i++) {
+            newNetworkJsonArray.push(networkJsonArray[sortedScoresArray[i].networkNumber]);
+        }
+
+        return newNetworkJsonArray;
     }
 
     let runTournament = (networkValues: networkJSON[]) => {
@@ -192,48 +206,43 @@ export default function BasicTrainingMenu() {
         return ((Math.random() * 2) - 1);
     }
 
-    const createNewGeneration = (networkValues: networkJSON[], scoresArray: networkScore[]) => {
+    const randomD6 = () => {
+        return Math.ceil((Math.random() * 6));
+    }
 
-        let newNetworkJSONArray = [];
+    const createNewGeneration = (networkValues: networkJSON[]) => {
+
+        let newNetworkJsonArray: networkJSON[] = [];
         {
-            for (let i = 0; i < 5; i++) {
-                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
+            networkValues.forEach((thisNetworkJson) => {
+                newNetworkJsonArray.push(thisNetworkJson);
+            });
 
-                newNetworkJSONArray.push(chosenNetworkJSON);
-            }
+            networkValues.forEach((thisNetworkJson) => {
+                newNetworkJsonArray.push(smallMutate(thisNetworkJson));
+                newNetworkJsonArray.push(smallMutate(thisNetworkJson));
+            });
 
-            for (let i = 0; i < 5; i++) {
-                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
+            networkValues.forEach((thisNetworkJson) => {
+                newNetworkJsonArray.push(largeMutate(thisNetworkJson));
+                newNetworkJsonArray.push(largeMutate(thisNetworkJson));
+            });
 
-                let mutatedNetworkJSON = smallMutate(chosenNetworkJSON);
-
-                newNetworkJSONArray.push(mutatedNetworkJSON);
-            }
-
-            for (let i = 0; i < 5; i++) {
-                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
-
-                let firstMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
-                let secondMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
-
-                newNetworkJSONArray.push(firstMutatedNetworkJSON);
-                newNetworkJSONArray.push(secondMutatedNetworkJSON);
-            }
-            for (let i = 0; i < 10; i++) {
-                newNetworkJSONArray.push(generateNewNetworkJSON(5, 5, 3, 3));
+            for (let i = 0; i < 30; i++) {
+                newNetworkJsonArray.push(generateNewNetworkJSON(5, 5, 3, 3));
             }
         }
-        return newNetworkJSONArray;
+        return newNetworkJsonArray;
     }
 
     const smallMutateNeuron = (neuron: neuronJSON) => {
         neuron.weights.forEach((thisWeight) => {
-            if (randomBit()) {
-                thisWeight += (randomValue() * .1);
+            if (randomD6() == 6) {
+                thisWeight += (randomValue() * .01);
             }
         });
-        if (randomBit()) {
-            neuron.bias += (randomValue() * .1);
+        if (randomD6() == 6) {
+            neuron.bias += (randomValue() * .01);
         }
     }
 
@@ -259,12 +268,16 @@ export default function BasicTrainingMenu() {
     const largeMutate = (networkJSON: networkJSON) => {
         let newNetworkJSON = structuredClone(networkJSON);
         newNetworkJSON.inputLayer.neurons.forEach((thisNeuron) => {
-            largeMutateNeuron(thisNeuron);
+            if (randomBit()) {
+                largeMutateNeuron(thisNeuron);
+            }
         });
 
         newNetworkJSON.layers.forEach((thisLayer) => {
             thisLayer.neurons.forEach((thisNeuron) => {
-                largeMutateNeuron(thisNeuron);
+                if (randomBit()) {
+                    largeMutateNeuron(thisNeuron);
+                }
             });
         });
 
@@ -277,9 +290,9 @@ export default function BasicTrainingMenu() {
 
     const largeMutateNeuron = (neuron: neuronJSON) => {
         neuron.weights.forEach((thisWeight) => {
-            thisWeight += (randomValue());
+            thisWeight += (randomValue() * 0.1);
         });
-        neuron.bias += (randomValue());
+        neuron.bias += (randomValue() * 0.1);
     }
 
     const generateNewNetworkJSON = (inputs: number, outputs: number, hiddenLayers: number, layerLength: number) => {
@@ -342,6 +355,11 @@ export default function BasicTrainingMenu() {
             return scoresArray;
         }
         let pivot = scoresArray[0];
+
+        if (pivot.score > highScore.current) {
+            highScore.current = pivot.score;
+        }
+
         let leftArray = [];
         let rightArray = [];
 
@@ -368,7 +386,12 @@ export default function BasicTrainingMenu() {
         <div>
             {
                 !newNetworksGenerated ?
-                    <button type="button" onClick={() => multiGenerationTraining(1000)} disabled={trainingInProcess}>Begin Training</button> :
+                    <button type="button" onClick={() => multiGenerationTraining(50000)} disabled={trainingInProcess}>Begin Training</button> :
+                    null
+            }
+            {
+                newNetworksGenerated ?
+                    <p>Highest score is {highScore.current}</p> :
                     null
             }
             {
