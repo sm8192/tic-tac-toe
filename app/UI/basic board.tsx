@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import BasicSpace from "./basic space";
 import networkValues from "@/app/network/BasicNetworkValues.json";
-import { network } from "../lib/definitions";
 
 export default function BasicBoard() {
     interface networkJSON {
@@ -95,7 +94,7 @@ export default function BasicBoard() {
         }
     }
 
-    const [boardState, setBoardState] = useState([false, false, false, false, false])
+    const [boardState, setBoardState] = useState([false, false, false]);
     const [gameOver, setGameOver] = useState(false);
     const [cpuWins, setCpuWins] = useState(false);
 
@@ -142,7 +141,7 @@ export default function BasicBoard() {
         setCpuWins(!cpuFailed);
     }
 
-    let  neuralNetwork = useRef(new Network(networkValues[0]));
+    let neuralNetwork = useRef(new Network(networkValues[0]));
 
     return (
         <div>
@@ -150,8 +149,6 @@ export default function BasicBoard() {
                 <BasicSpace chosen={boardState[0]} playerMove={() => toggleSpace(0)} />
                 <BasicSpace chosen={boardState[1]} playerMove={() => toggleSpace(1)} />
                 <BasicSpace chosen={boardState[2]} playerMove={() => toggleSpace(2)} />
-                <BasicSpace chosen={boardState[3]} playerMove={() => toggleSpace(3)} />
-                <BasicSpace chosen={boardState[4]} playerMove={() => toggleSpace(4)} />
                 <button type="button" onClick={submitSequence}>Submit Sequence</button>
             </div>
             <div>
