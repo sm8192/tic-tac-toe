@@ -134,7 +134,6 @@ export default function BasicTrainingMenu() {
         for (let i = 0; i < 30; i++) {
             newNetworkJsonArray.push(networkJsonArray[sortedScoresArray[i].networkNumber]);
         }
-
         return newNetworkJsonArray;
     }
 
@@ -147,7 +146,6 @@ export default function BasicTrainingMenu() {
                 networkNumber: i,
                 score: 0
             }
-
             scoresArray.push(thisScoreObject);
         }
 
@@ -245,7 +243,7 @@ export default function BasicTrainingMenu() {
     }
 
     const crossoverNetworks = (networkOne: networkJSON, networkTwo: networkJSON) => {
-        if(networkOne == networkTwo) {
+        if (networkOne == networkTwo) {
             return networkOne;
         }
 
@@ -257,11 +255,11 @@ export default function BasicTrainingMenu() {
             outputLayer: {
                 neurons: []
             }
-        };
+        }
+
         newNetworkJson.inputLayer = crossoverLayers(networkOne.inputLayer, networkTwo.inputLayer);
 
-        for(let i = 0; i < networkOne.layers.length; i++)
-        {
+        for (let i = 0; i < networkOne.layers.length; i++) {
             newNetworkJson.layers.push(crossoverLayers(networkOne.layers[i], networkTwo.layers[i]));
         }
 
@@ -275,7 +273,7 @@ export default function BasicTrainingMenu() {
             neurons: []
         }
 
-        for(let i = 0; i < layerOne.neurons.length; i++) {
+        for (let i = 0; i < layerOne.neurons.length; i++) {
             newLayerJson.neurons.push(crossoverNeuron(layerOne.neurons[i], layerTwo.neurons[i]));
         }
 
@@ -289,10 +287,10 @@ export default function BasicTrainingMenu() {
         }
 
         for (let i = 0; i < neuronOne.weights.length; i++) {
-            newNeuronJson.weights.push(randomBit() ? neuronOne.weights[i]: neuronTwo.weights[i]);
+            newNeuronJson.weights.push(randomBit() ? neuronOne.weights[i] : neuronTwo.weights[i]);
         }
 
-        newNeuronJson.bias = (randomBit() ? neuronOne.bias: neuronTwo.bias);
+        newNeuronJson.bias = (randomBit() ? neuronOne.bias : neuronTwo.bias);
 
         return newNeuronJson;
     }
@@ -300,11 +298,11 @@ export default function BasicTrainingMenu() {
     const smallMutateNeuron = (neuron: neuronJSON) => {
         neuron.weights.forEach((thisWeight) => {
             if (randomD6() == 6) {
-                thisWeight += (randomValue() * .01);
+                thisWeight += (randomValue() * .1);
             }
         });
         if (randomD6() == 6) {
-            neuron.bias += (randomValue() * .01);
+            neuron.bias += (randomValue() * .1);
         }
     }
 
@@ -352,9 +350,9 @@ export default function BasicTrainingMenu() {
 
     const largeMutateNeuron = (neuron: neuronJSON) => {
         neuron.weights.forEach((thisWeight) => {
-            thisWeight += (randomValue() * 0.1);
+            thisWeight += (randomValue() * 0.3);
         });
-        neuron.bias += (randomValue() * 0.1);
+        neuron.bias += (randomValue() * 0.3);
     }
 
     const generateNewNetworkJSON = (inputs: number, outputs: number, hiddenLayers: number, layerLength: number) => {
