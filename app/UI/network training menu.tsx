@@ -1,108 +1,106 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import networkValues from "@/app/network/NetworkValues.json";
 
-export default function TrainingMenu() {
+interface networkJSON {
+    inputLayer: {
+        neurons: neuronJSON[]
+    },
+    layers: layerJSON[],
+    outputLayer: {
+        neurons: neuronJSON[]
+    }
+}
 
-    interface networkJSON {
-        inputLayer: {
-            neurons: neuronJSON[]
-        },
-        layers: layerJSON[],
-        outputLayer: {
-            neurons: neuronJSON[]
+interface layerJSON {
+    neurons: neuronJSON[]
+}
+
+interface neuronJSON {
+    weights: number[],
+    bias: number
+}
+
+interface networkScore {
+    networkNumber: number,
+    score: number
+}
+
+class Neuron {
+    weights: number[];
+    bias: number;
+
+    constructor(neuronJSON: neuronJSON) {
+        this.weights = neuronJSON.weights;
+        this.bias = neuronJSON.bias;
+    }
+
+    activateNeuron(input: boolean[]) {
+        const weightedSum = this.weights.reduce((sum, weight, i) => {
+            let inputNumber = input[i] ? 1 : 0;
+            return ((inputNumber * weight) + sum);
+        }, 0);
+        return weightedSum + this.bias > 0 ? true : false;
+    }
+}
+
+class Layer {
+    neurons: Neuron[];
+
+    constructor(layerJSON: layerJSON) {
+        this.neurons = [];
+        for (let i = 0; i < layerJSON.neurons.length; i++) {
+            let thisNeuron = new Neuron(layerJSON.neurons[i]);
+            this.neurons.push(thisNeuron);
         }
     }
 
-    interface layerJSON {
-        neurons: neuronJSON[]
+    activateLayer(inputArray: boolean[]) {
+        let outputArray: boolean[] = [];
+
+        for (let i = 0; i < this.neurons.length; i++) {
+            outputArray.push(this.neurons[i].activateNeuron(inputArray));
+        }
+        return outputArray;
+    }
+}
+
+class Network {
+    inputLayer: Layer;
+    layers: Layer[];
+    outputLayer: Layer;
+
+    constructor(networkJSON: networkJSON) {
+        this.layers = [];
+
+        this.inputLayer = new Layer(networkJSON.inputLayer);
+
+        for (let i = 0; i < networkJSON.layers.length; i++) {
+            this.layers.push(new Layer(networkJSON.layers[i]));
+        }
+        this.outputLayer = new Layer(networkJSON.outputLayer);
     }
 
-    interface neuronJSON {
-        weights: number[],
-        bias: number
-    }
+    activateNetwork(inputArray: boolean[]) {
+        let firstLayerOutputs = this.inputLayer.activateLayer(inputArray);
 
-    interface networkScore {
-        networkNumber: number,
-        score: number
+        let hiddenLayerOutputs = this.layers.reduce((previousOutputs, thisLayer) => {
+            return thisLayer.activateLayer(previousOutputs)
+        }, firstLayerOutputs);
+
+        return this.outputLayer.activateLayer(hiddenLayerOutputs);
     }
+}
+
+export default function TrainingMenu() {
+
     const emptyNetworkArray: networkJSON[] = [];
 
     const [trainingInProcess, setTrainingInProcess] = useState(false);
     const [newNetworksGenerated, setNewNetworksGenerated] = useState(false);
-    const [newNetworkArray, setNewNetworkArray] = useState(emptyNetworkArray);
 
-    class Neuron {
-        weights: number[];
-        bias: number;
-
-        constructor(neuronJSON: neuronJSON) {
-            this.weights = neuronJSON.weights;
-            this.bias = neuronJSON.bias;
-        }
-
-        activateNeuron(input: boolean[]) {
-            const weightedSum = this.weights.reduce((sum, weight, i) => {
-                let inputNumber = input[i] ? 1 : 0;
-                return ((inputNumber * weight) + sum);
-            }, 0);
-            return weightedSum + this.bias > 0 ? true : false;
-        }
-    }
-
-    class Layer {
-        neurons: Neuron[];
-
-        constructor(layerJSON: layerJSON) {
-            this.neurons = [];
-            for (let i = 0; i < layerJSON.neurons.length; i++) {
-                let thisNeuron = new Neuron(layerJSON.neurons[i]);
-                this.neurons.push(thisNeuron);
-            }
-        }
-
-        activateLayer(inputArray: boolean[]) {
-            let outputArray: boolean[] = [];
-
-            for (let i = 0; i < this.neurons.length; i++) {
-                outputArray.push(this.neurons[i].activateNeuron(inputArray));
-            }
-            return outputArray;
-        }
-    }
-
-    class Network {
-        inputLayer: Layer;
-        layers: Layer[];
-        outputLayer: Layer;
-
-        constructor(networkJSON: networkJSON) {
-            this.layers = [];
-
-            this.inputLayer = new Layer(networkJSON.inputLayer);
-
-            for (let i = 0; i < networkJSON.layers.length; i++) {
-                if (i == 0) {
-                    this.layers.push(new Layer(networkJSON.layers[i]))
-                } else {
-                    this.layers.push(new Layer(networkJSON.layers[i]));
-                }
-            }
-            this.outputLayer = new Layer(networkJSON.outputLayer);
-        }
-
-        activateNetwork(inputArray: boolean[]) {
-            let firstLayerOutputs = this.inputLayer.activateLayer(inputArray);
-
-            let hiddenLayerOutputs = this.layers.reduce((previousOutputs, thisLayer) => {
-                return thisLayer.activateLayer(previousOutputs)
-            }, firstLayerOutputs);
-
-            return this.outputLayer.activateLayer(hiddenLayerOutputs);
-        }
-    }
+    let newNetworkArray = useRef(emptyNetworkArray);
 
     const multiGenerationTraining = (numberOfGenerations: number) => {
         if (trainingInProcess) {
@@ -110,20 +108,47 @@ export default function TrainingMenu() {
         }
         setTrainingInProcess(true);
 
-        let scoresArray = runTournament(networkValues);
-        let sortedScores = quickSortByScore(scoresArray);
-        let newNetworkValues = createNewGeneration(networkValues, sortedScores);
+        let newGeneration = createNewGeneration(networkValues);
+        let scoresArray = runTournament(newGeneration);
+        let top30 = selectTop30(newGeneration, scoresArray);
         for (let i = 1; i < numberOfGenerations; i++) {
-            let scoresArray = runTournament(newNetworkValues);
-            let sortedScores = quickSortByScore(scoresArray);
-            newNetworkValues = createNewGeneration(newNetworkValues, sortedScores);
+            let newGeneration = createNewGeneration(top30)
+            let scoresArray = runTournament(newGeneration);
+            top30 = selectTop30(newGeneration, scoresArray);
         }
-        setNewNetworkArray(newNetworkValues);
+
+        newNetworkArray.current = top30;
+
         setNewNetworksGenerated(true);
         setTrainingInProcess(false);
     }
 
-    let runTournament = (networkValues: networkJSON[]) => {
+    const createNewGeneration = (networkValues: networkJSON[]) => {
+
+        let newNetworkJSONArray: networkJSON[] = [];
+
+        for (let i = 0; i < networkValues.length; i++) {
+            newNetworkJSONArray.push(networkValues[i]);
+        }
+
+        for (let i = 0; i < 10; i++) {
+            let mutatedNetworkJSON = smallMutate(networkValues[i]);
+            newNetworkJSONArray.push(mutatedNetworkJSON);
+        }
+
+        for (let i = 0; i < 10; i++) {
+            let mutatedNetworkJSON = largeMutate(networkValues[i]);
+            newNetworkJSONArray.push(mutatedNetworkJSON);
+        }
+
+        for (let i = 0; i < 10; i++) {
+            newNetworkJSONArray.push(generateNewNetworkJSON(18, 4, 10, 10));
+        }
+
+        return newNetworkJSONArray;
+    }
+
+    const runTournament = (networkValues: networkJSON[]) => {
         let length = networkValues.length;
         let scoresArray = [];
 
@@ -166,84 +191,81 @@ export default function TrainingMenu() {
         return scoresArray;
     }
 
-    const createNewGeneration = (networkValues: networkJSON[], scoresArray: networkScore[]) => {
+    const selectTop30 = (networkJsonArray: networkJSON[], scoresArray: networkScore[]) => {
+        let sortedScoresArray = quickSortByScore(scoresArray);
+        let newNetworkJsonArray: networkJSON[] = [];
 
-        let newNetworkJSONArray = [];
-        {
-            for (let i = 0; i < 5; i++) {
-                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
-
-                newNetworkJSONArray.push(chosenNetworkJSON);
-            }
-
-            for (let i = 0; i < 5; i++) {
-                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
-
-                let mutatedNetworkJSON = smallMutate(chosenNetworkJSON);
-
-                newNetworkJSONArray.push(mutatedNetworkJSON);
-            }
-
-            for (let i = 0; i < 5; i++) {
-                let chosenNetworkJSON = networkValues[scoresArray[i].networkNumber];
-
-                let firstMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
-                let secondMutatedNetworkJSON = largeMutate(chosenNetworkJSON);
-
-                newNetworkJSONArray.push(firstMutatedNetworkJSON);
-                newNetworkJSONArray.push(secondMutatedNetworkJSON);
-            }
-            for (let i = 0; i < 10; i++) {
-                newNetworkJSONArray.push(generateNewNetworkJSON(18, 4, 10, 10));
-            }
+        for (let i = 0; i < 30; i++) {
+            newNetworkJsonArray.push(networkJsonArray[sortedScoresArray[i].networkNumber]);
         }
-        return newNetworkJSONArray;
+        return newNetworkJsonArray;
     }
 
-    const convertBoardstateToInputs = (board: string[][]) => {
-        let networkInputs: boolean[] = [];
+    const smallMutate = (networkJSON: networkJSON) => {
+        let newNetworkJSON = structuredClone(networkJSON)
 
-        board.forEach((thisRow) => {
-            thisRow.forEach((thisSpace) => {
-                if (thisSpace != '') {
-                    networkInputs.push(true);
-                    if (thisSpace == 'X') {
-                        networkInputs.push(true);
-                    } else {
-                        networkInputs.push(false);
-                    }
-                } else {
-                    networkInputs.push(false);
-                    networkInputs.push(false);
-                }
-            });
-        });
-        return networkInputs;
+        for (let i = 0; i < newNetworkJSON.inputLayer.neurons.length; i++) {
+            smallMutateNeuron(newNetworkJSON.inputLayer.neurons[i]);
+        }
+
+        for (let i = 0; i < newNetworkJSON.layers.length; i++) {
+            for (let j = 0; j < newNetworkJSON.layers[i].neurons.length; j++) {
+                smallMutateNeuron(newNetworkJSON.layers[i].neurons[j]);
+            }
+        }
+
+        for (let i = 0; i < newNetworkJSON.outputLayer.neurons.length; i++) {
+            smallMutateNeuron(newNetworkJSON.outputLayer.neurons[i]);
+        }
+
+        return newNetworkJSON;
     }
 
-    const calculateRow = (rowFirstBit: boolean, rowSecondBit: boolean) => {
+    const largeMutate = (networkJSON: networkJSON) => {
+        let newNetworkJSON = structuredClone(networkJSON);
 
-        if (rowFirstBit) {
-            if (rowSecondBit) {
-                return 0;
-            } else {
-                return 1;
-            }
-        } else {
-            return 2;
+        for (let i = 0; i < newNetworkJSON.inputLayer.neurons.length; i++) {
+            largeMutateNeuron(newNetworkJSON.inputLayer.neurons[i]);
         }
+
+        for (let i = 0; i < newNetworkJSON.layers.length; i++) {
+            for (let j = 0; j < newNetworkJSON.layers[i].neurons.length; j++) {
+                largeMutateNeuron(newNetworkJSON.layers[i].neurons[j]);
+            }
+        }
+
+        for (let i = 0; i < newNetworkJSON.outputLayer.neurons.length; i++) {
+            largeMutateNeuron(newNetworkJSON.outputLayer.neurons[i]);
+        }
+
+        return newNetworkJSON;
     }
 
-    const calculateColumn = (columnFirstBit: boolean, columnSecondBit: boolean) => {
-        if (columnFirstBit) {
-            if (columnSecondBit) {
-                return 0;
-            } else {
-                return 1;
+    const generateNewNetworkJSON = (inputs: number, outputs: number, hiddenLayers: number, layerLength: number) => {
+        let emptyNeurons: neuronJSON[] = [];
+        let emptyLayers: layerJSON[] = [];
+        let newNetworkJSON = {
+            inputLayer: {
+                neurons: emptyNeurons,
+            },
+            layers: emptyLayers,
+            outputLayer: {
+                neurons: emptyNeurons,
             }
-        } else {
-            return 2;
         }
+        for (let i = 0; i < layerLength; i++) {
+            newNetworkJSON.inputLayer.neurons.push(generateNewNeuronJSON(inputs));
+        }
+
+        for (let i = 0; i < hiddenLayers; i++) {
+            newNetworkJSON.layers.push(generateNewLayerJSON(layerLength, layerLength));
+        }
+
+        for (let i = 0; i < outputs; i++) {
+            newNetworkJSON.outputLayer.neurons.push(generateNewNeuronJSON(layerLength));
+        }
+
+        return newNetworkJSON;
     }
 
     const simulateGame = (playerOne: Network, playerTwo: Network) => {
@@ -275,15 +297,132 @@ export default function TrainingMenu() {
                 winner = activePlayer;
             }
 
+            if (winner == '' && checkForTie(tempBoard)) {
+                winner = 'C';
+            }
+
             activePlayer = getOtherPlayer(activePlayer);
 
         } while (winner == '')
-        if (winner == 'X') {
-            return 'X';
-        } else if (winner == 'O') {
-            return 'O';
+        return winner;
+    }
+
+    const quickSortByScore = (scoresArray: networkScore[]) => {
+        let length = scoresArray.length;
+        if (length <= 1) {
+            return scoresArray;
+        }
+        let pivot = scoresArray[0];
+        let leftArray = [];
+        let rightArray = [];
+
+        for (let i = 1; i < length; i++) {
+            if (scoresArray[i].score > pivot.score) {
+                leftArray.push(scoresArray[i]);
+            } else {
+                rightArray.push(scoresArray[i]);
+            }
+        }
+
+        let sortedArray: networkScore[] = quickSortByScore(leftArray)
+            .concat(pivot)
+            .concat(quickSortByScore(rightArray));
+
+        return sortedArray;
+    }
+
+    const smallMutateNeuron = (neuron: neuronJSON) => {
+        for (let i = 0; i < neuron.weights.length; i++) {
+            if (randomBit() && randomBit() && randomBit()) {
+                neuron.weights[i] += (randomValue() * 0.1);
+            }
+        }
+
+        if (randomBit() && randomBit() && randomBit()) {
+            neuron.bias += (randomValue() * 0.1);
+        }
+    }
+
+    const largeMutateNeuron = (neuron: neuronJSON) => {
+        for (let i = 0; i < neuron.weights.length; i++) {
+            if (randomBit()) {
+                neuron.weights[i] += (randomValue() * 0.5);
+            }
+        }
+
+        if (randomBit()) {
+            neuron.bias += (randomValue() * 0.5);
+        }
+    }
+
+    const generateNewNeuronJSON = (numberOfInputs: number) => {
+        let emptyWeights: number[] = [];
+        let newNeuron = {
+            weights: emptyWeights,
+            bias: randomValue()
+        }
+
+        for (let i = 0; i < numberOfInputs; i++) {
+            newNeuron.weights.push(randomValue());
+        }
+        return newNeuron;
+    }
+
+    const generateNewLayerJSON = (numberOfInputs: number, layerLength: number) => {
+        let emptyNeurons: neuronJSON[] = [];
+        let newLayerJSON = {
+            neurons: emptyNeurons
+        }
+
+        for (let i = 0; i < layerLength; i++) {
+            newLayerJSON.neurons.push(generateNewNeuronJSON(numberOfInputs));
+        }
+        return newLayerJSON;
+    }
+
+    const convertBoardstateToInputs = (board: string[][]) => {
+        let networkInputs: boolean[] = [];
+
+        for (let i = 0; i < board.length; i++) {
+            for (let j = 0; j < board[i].length; j++) {
+                if (board[i][j] != '') {
+                    networkInputs.push(true);
+                    if (board[i][j] == 'X') {
+                        networkInputs.push(true);
+                    } else {
+                        networkInputs.push(false);
+                    }
+                } else {
+                    networkInputs.push(false);
+                    networkInputs.push(false);
+                }
+            }
+        }
+        return networkInputs;
+    }
+
+    const calculateRow = (rowFirstBit: boolean, rowSecondBit: boolean) => {
+
+        if (rowFirstBit) {
+            if (rowSecondBit) {
+                return 0;
+            } else {
+                return 1;
+            }
         } else {
-            return 'C';
+            return 2;
+        }
+    }
+
+    const calculateColumn = (columnFirstBit: boolean, columnSecondBit: boolean) => {
+        if (columnFirstBit) {
+            if (columnSecondBit) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } else {
+            return 2;
         }
     }
 
@@ -318,6 +457,34 @@ export default function TrainingMenu() {
         return win;
     }
 
+    const checkForTie = (board: string[][]) => {
+        let tie = true;
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                if (board[i][j] == '') {
+                    tie = false;
+                    break;
+                }
+            }
+            if (!tie) {
+                break;
+            }
+        }
+        return tie;
+    }
+
+    const randomBit = () => {
+        if (randomValue() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    const randomValue = () => {
+        return ((Math.random() * 2) - 1);
+    }
+
     const checkRowForWin = (board: string[][], row: number) => {
         if (board[row][0] &&
             board[row][0] == board[row][1] &&
@@ -347,159 +514,12 @@ export default function TrainingMenu() {
             board[0][2] == board[2][0]
         ) {
             return true;
-        } else {
-            return false;
         }
-    }
-
-    const smallMutate = (networkJSON: networkJSON) => {
-        let newNetworkJSON = structuredClone(networkJSON)
-        newNetworkJSON.inputLayer.neurons.forEach((thisNeuron) => {
-            smallMutateNeuron(thisNeuron);
-        });
-
-        newNetworkJSON.layers.forEach((thisLayer) => {
-            thisLayer.neurons.forEach((thisNeuron) => {
-                smallMutateNeuron(thisNeuron);
-            })
-        });
-
-        newNetworkJSON.outputLayer.neurons.forEach((thisNeuron) => {
-            smallMutateNeuron(thisNeuron);
-        });
-
-        return newNetworkJSON;
-    }
-
-    const smallMutateNeuron = (neuron: neuronJSON) => {
-        neuron.weights.forEach((thisWeight) => {
-            if (randomBit()) {
-                thisWeight += (randomValue() * .1);
-            }
-        });
-        if (randomBit()) {
-            neuron.bias += (randomValue() * .1);
-        }
-    }
-
-    const largeMutate = (networkJSON: networkJSON) => {
-        let newNetworkJSON = structuredClone(networkJSON);
-        newNetworkJSON.inputLayer.neurons.forEach((thisNeuron) => {
-            largeMutateNeuron(thisNeuron);
-        });
-
-        newNetworkJSON.layers.forEach((thisLayer) => {
-            thisLayer.neurons.forEach((thisNeuron) => {
-                largeMutateNeuron(thisNeuron);
-            });
-        });
-
-        newNetworkJSON.outputLayer.neurons.forEach((thisNeuron) => {
-            largeMutateNeuron(thisNeuron);
-        });
-
-        return newNetworkJSON;
-    }
-
-    const largeMutateNeuron = (neuron: neuronJSON) => {
-        neuron.weights.forEach((thisWeight) => {
-            thisWeight += (randomValue());
-        });
-        neuron.bias += (randomValue());
-    }
-
-    const generateNewNetworkJSON = (inputs: number, outputs: number, hiddenLayers: number, layerLength: number) => {
-        let emptyInputNeurons: neuronJSON[] = [];
-        let emptyLayers: layerJSON[] = [];
-        let emptyOutputNeurons: neuronJSON[] = [];
-        let newNetworkJSON = {
-            inputLayer: {
-                neurons: emptyInputNeurons,
-            },
-            layers: emptyLayers
-            ,
-            outputLayer: {
-                neurons: emptyOutputNeurons,
-            }
-        }
-        for (let i = 0; i < layerLength; i++) {
-            newNetworkJSON.inputLayer.neurons.push(generateNewNeuronJSON(inputs));
-        }
-
-        for (let i = 0; i < hiddenLayers; i++) {
-            newNetworkJSON.layers.push(generateNewLayerJSON(layerLength, layerLength));
-        }
-
-        for (let i = 0; i < outputs; i++) {
-            newNetworkJSON.outputLayer.neurons.push(generateNewNeuronJSON(layerLength));
-        }
-
-        return newNetworkJSON;
-    }
-
-    const generateNewNeuronJSON = (numberOfInputs: number) => {
-        let emptyWeights: number[] = [];
-        let newNeuron = {
-            weights: emptyWeights,
-            bias: randomValue()
-        }
-
-        for (let i = 0; i < numberOfInputs; i++) {
-            newNeuron.weights.push(randomValue());
-        }
-        return newNeuron;
-    }
-
-    const generateNewLayerJSON = (numberOfInputs: number, layerLength: number) => {
-        let emptyNeurons: neuronJSON[] = [];
-        let newLayerJSON = {
-            neurons: emptyNeurons
-        }
-
-        for (let i = 0; i < layerLength; i++) {
-            newLayerJSON.neurons.push(generateNewNeuronJSON(numberOfInputs));
-        }
-        return newLayerJSON;
-    }
-
-    const randomValue = () => {
-        return ((Math.random() * 2) - 1);
-    }
-
-    const randomBit = () => {
-        if (randomValue() > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    const quickSortByScore = (scoresArray: networkScore[]) => {
-        let length = scoresArray.length;
-        if (length <= 1) {
-            return scoresArray;
-        }
-        let pivot = scoresArray[0];
-        let leftArray = [];
-        let rightArray = [];
-
-        for (let i = 1; i < length; i++) {
-            if (scoresArray[i].score > pivot.score) {
-                leftArray.push(scoresArray[i]);
-            } else {
-                rightArray.push(scoresArray[i]);
-            }
-        }
-
-        let sortedArray: networkScore[] = quickSortByScore(leftArray)
-            .concat(pivot)
-            .concat(quickSortByScore(rightArray));
-
-        return sortedArray;
+        return false;
     }
 
     const copyNetworksToClipboard = () => {
-        navigator.clipboard.writeText(JSON.stringify(newNetworkArray));
+        navigator.clipboard.writeText(JSON.stringify(newNetworkArray.current));
     }
 
     return (
