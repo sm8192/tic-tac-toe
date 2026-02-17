@@ -296,9 +296,9 @@ export default function BasicTrainingMenu() {
     }
 
     const smallMutateNeuron = (neuron: neuronJSON) => {
-        neuron.weights.forEach((thisWeight) => {
+        neuron.weights.forEach((thisWeight, i) => {
             if (randomD6() == 6) {
-                thisWeight += (randomValue() * .1);
+                neuron.weights[i] = thisWeight + (randomValue() * .1);
             }
         });
         if (randomD6() == 6) {
@@ -349,8 +349,8 @@ export default function BasicTrainingMenu() {
     }
 
     const largeMutateNeuron = (neuron: neuronJSON) => {
-        neuron.weights.forEach((thisWeight) => {
-            thisWeight += (randomValue() * 0.3);
+        neuron.weights.forEach((thisWeight, i) => {
+            neuron.weights[i] = thisWeight + (randomValue() * 0.3);
         });
         neuron.bias += (randomValue() * 0.3);
     }
@@ -452,7 +452,7 @@ export default function BasicTrainingMenu() {
         <div>
             {
                 !newNetworksGenerated ?
-                    <button type="button" onClick={() => multiGenerationTraining(1000000)} disabled={trainingInProcess}>Begin Training</button> :
+                    <button type="button" onClick={() => multiGenerationTraining(100000)} disabled={trainingInProcess}>Begin Training</button> :
                     null
             }
             {
