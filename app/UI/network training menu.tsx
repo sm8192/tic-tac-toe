@@ -99,7 +99,6 @@ export default function TrainingMenu() {
 
     const [trainingInProcess, setTrainingInProcess] = useState(false);
     const [newNetworksGenerated, setNewNetworksGenerated] = useState(false);
-    const [loadingIcon, setLoadingIcon] = useState(false);
 
     let newNetworkArray = useRef(emptyNetworkArray);
 
@@ -117,7 +116,7 @@ export default function TrainingMenu() {
             let scoresArray = runTournament(newGeneration);
             top30 = selectTop30(newGeneration, scoresArray);
             if ((i % 100) == 0) {
-                setLoadingIcon(!loadingIcon);
+                console.log(i);
             }
         }
 
@@ -532,14 +531,6 @@ export default function TrainingMenu() {
                 !newNetworksGenerated ?
                     <button type="button" onClick={() => multiGenerationTraining(100000)} disabled={trainingInProcess}>Begin Training</button> :
                     null
-            }
-            {(!loadingIcon && trainingInProcess) ?
-                <p>X</p> :
-                null
-            }
-            {(loadingIcon && trainingInProcess) ?
-                <p>O</p> :
-                null
             }
             {
                 newNetworksGenerated ?
