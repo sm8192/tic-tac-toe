@@ -529,7 +529,7 @@ export default function TrainingMenu() {
         <div>
             {
                 !newNetworksGenerated ?
-                    <button type="button" onClick={() => multiGenerationTraining(100000)} disabled={trainingInProcess}>Begin Training</button> :
+                    <button type="button" onClick={() => multiGenerationTraining(1000000)} disabled={trainingInProcess}>Begin Training</button> :
                     null
             }
             {
